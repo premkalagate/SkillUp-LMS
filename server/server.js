@@ -33,12 +33,13 @@ mongoose.connection.on('disconnected', () => {
 
 // Connect with better error handling
 mongoose.connect(mongoUri, {
-  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 10s
+  serverSelectionTimeoutMS: 10000, // Timeout after 10s
   socketTimeoutMS: 45000,
   // Additional options for Atlas connection
   ssl: true,
   tls: true,
-  tlsInsecure: true, // This bypasses certificate validation (for development only)
+  tlsAllowInvalidHostnames: true, // Allow invalid hostnames
+  tlsAllowInvalidCertificates: true, // Allow invalid certificates
   retryWrites: true,
   maxPoolSize: 10, // Maintain up to 10 socket connections
 })
@@ -70,6 +71,7 @@ import lessonProgressRoutes from './routes/lessonProgress.js';
 import certificateRoutes from './routes/certificates.js';
 import adminRoutes from './routes/admin.js';
 import razorpayRoutes from './routes/api/razorpay.js';
+import settingsRoutes from './routes/settings.js';
 
 // Import database connection check middleware
 import { checkDbConnection } from './middleware/checkDbConnection.js';
@@ -87,6 +89,7 @@ app.use('/api/lesson-progress', checkDbConnection, lessonProgressRoutes);
 app.use('/api/certificates', checkDbConnection, certificateRoutes);
 app.use('/api/admin', checkDbConnection, adminRoutes);
 app.use('/api/razorpay', checkDbConnection, razorpayRoutes);
+app.use('/api/settings', checkDbConnection, settingsRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

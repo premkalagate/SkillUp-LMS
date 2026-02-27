@@ -19,25 +19,50 @@ const razorpay = new Razorpay({
 // Create a new Razorpay order
 const createOrder = async (req, res) => {
   try {
+    console.log('Creating Razorpay order with body:', req.body);
+    
     const { amount, currency = 'INR', receipt, notes } = req.body;
+
+    // Validate required fields
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid amount provided',
+      });
+    }
+
+    console.log('Razorpay credentials:', {
+      key_id: process.env.RAZORPAY_KEY_ID ? 'Set' : 'Not set',
+      key_secret: process.env.RAZORPAY_KEY_SECRET ? 'Set' : 'Not set'
+    });
 
     const options = {
       amount: amount * 100, // Convert to paise
       currency,
-      receipt,
-      notes,
+      receipt: receipt ? receipt.substring(0, 40) : `rcpt_${Date.now().toString().slice(-10)}`,
+      notes: notes || {},
     };
 
+    console.log('Creating order with options:', options);
+
     const order = await razorpay.orders.create(options);
+
+    console.log('Order created successfully:', order.id);
 
     res.status(200).json({
       success: true,
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      statusCode: error.statusCode
+    });
     res.status(500).json({
       success: false,
       error: error.message,
@@ -53,7 +78,7 @@ const verifyPayment = async (req, res) => {
     // Verify the payment signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZUREPAY_KEY_SECRET)
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(body.toString())
       .digest("hex");
 
